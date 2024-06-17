@@ -1,0 +1,7 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - 01.trigger.yml
+  - 02.event-listener.yml
+  - 03.service.yml
+  - 04.route.yml

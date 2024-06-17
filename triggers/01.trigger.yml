@@ -1,0 +1,45 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: trigger-template-ansible-pipeline
+  namespace: ansible-pipeline-namespace
+spec:
+  params:
+    - name: git-repo-url
+    - name: pullreq-sha
+    - name: pullreq-action
+    - name: pullreq-number
+    - name: pullreq-repo-full_name
+    - name: pullreq-html-url
+    - name: pullreq-title
+    - name: pullreq-issue-url
+    - name: organisations-url
+    - name: user-type
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        annotations: {}
+        generateName: ansible-pipeline-
+        labels:
+          tekton.dev/pipeline: ansible-pipeline
+        namespace: ansible-pipeline-namespace
+      spec:
+        params:
+          - name: git-repo-url
+            value: $(tt.params.git-repo-url)
+          - name: ansible-url
+            value: $(uid)
+          - name: ansible-token
+            value: $(uid)
+          - name: git-branch
+            value: $(tt.params.git-repo-url)
+          - name: job-extra-vars-path
+            value: /workspace/shared-data/job_vars.json
+        pipelineRef:
+          name: ansible-pipeline
+        resources: []
+        status: null
+        workspaces:
+          - emptyDir: {}
+            name: pipeline-pvc

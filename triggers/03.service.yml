@@ -1,0 +1,38 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: el-event-listener-service
+  namespace: ansible-pipeline-namespace
+  labels:
+    app.kubernetes.io/managed-by: EventListener
+    app.kubernetes.io/part-of: Triggers
+    eventlistener: event-listener-ansible-pipeline
+  ownerReferences:
+    - apiVersion: triggers.tekton.dev/v1beta1
+      kind: EventListener
+      name: event-listener-ansible-pipeline
+      uid: event-listener-ansible-pipeline
+      controller: true
+      blockOwnerDeletion: true
+spec:
+  ipFamilies:
+    - IPv4
+  ports:
+    - name: http-listener
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+    - name: http-metrics
+      protocol: TCP
+      port: 9000
+      targetPort: 9000
+  internalTrafficPolicy: Cluster
+  type: ClusterIP
+  ipFamilyPolicy: SingleStack
+  sessionAffinity: None
+  selector:
+    app.kubernetes.io/managed-by: EventListener
+    app.kubernetes.io/part-of: Triggers
+    eventlistener: event-listener-ansible-pipeline
+status:
+  loadBalancer: {}
