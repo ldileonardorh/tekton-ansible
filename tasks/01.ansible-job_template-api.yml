@@ -1,0 +1,31 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: ansible-launch-task
+  namespace: ansible-pipeline-namespace
+spec:
+  params:
+    - name: ansible_url
+      type: string
+      description: The URL for the Ansible Automation Platform job template launch
+    - name: ansible_token
+      type: string
+      description: The token for Ansible Automation Platform
+    - name: job_vars_path
+      type: string
+      description: Path to the JSON file containing job template variables
+      default: /workspace/shared-data/job_vars.json
+  steps:
+    - name: launch-ansible-job
+      image: curlimages/curl:latest
+      script: |
+        #!/bin/sh
+        set -e
+        job_vars=$(cat "$(params.job_vars_path)")
+        curl -k -X POST "$(params.ansible_url)" \
+          -H "Authorization: Bearer $(params.ansible_token)" \
+          -H "Content-Type: application/json" \
+          -d "$job_vars"
+  workspaces:
+    - name: shared-data
+      mountPath: /workspace/shared-data
