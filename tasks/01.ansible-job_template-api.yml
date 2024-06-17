@@ -15,17 +15,36 @@ spec:
       type: string
       description: Path to the JSON file containing job template variables
       default: /workspace/shared-data/job_vars.json
+    - name: job_status_url
+      type: string
+      description: The URL for checking the status of the Ansible Automation Platform job
   steps:
     - name: launch-ansible-job
       image: curlimages/curl:latest
       script: |
         #!/bin/sh
-        set -e
-        job_vars=$(cat "$(params.job_vars_path)")
-        curl -k -X POST "$(params.ansible_url)" \
+        response=$(curl -v -k -X POST "$(params.ansible_url)" \
           -H "Authorization: Bearer $(params.ansible_token)" \
-          -H "Content-Type: application/json" \
-          -d "$job_vars"
+          -H "Content-Type: application/json")
+        job_id=$(echo $response | jq -r '.id')
+        echo $job_id > /workspace/shared-data/job_id.txt
+    - name: check-job-status
+      image: curlimages/curl:latest
+      script: |
+        #!/bin/sh
+        job_id=$(cat /workspace/shared-data/job_id.txt)
+        status="pending"
+        while [ "$status" = "pending" ] || [ "$status" = "running" ]; do
+          sleep 10
+          response=$(curl -v -k "$(params.job_status_url)/$job_id/" \
+            -H "Authorization: Bearer $(params.ansible_token)")
+          status=$(echo $response | jq -r '.status')
+          echo "Job status: $status"
+        done
+        if [ "$status" != "successful" ]; then
+          echo "Job failed with status: $status"
+          exit 1
+        fi
   workspaces:
     - name: shared-data
       mountPath: /workspace/shared-data
